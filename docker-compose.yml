@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_KEYSPACE=post_service
+      - CASSANDRA_DC=datacenter1
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+
+#  post-service:
+#    build: .
+#    container_name: post-service
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      cassandra-init:
+#        condition: service_completed_successfully
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=default
+#      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra:9042
+#      - SPRING_DATA_CASSANDRA_KEYSPACE_NAME=post_service
+#      - SPRING_DATA_CASSANDRA_LOCAL_DATACENTER=datacenter1
+
+volumes:
+  cassandra_data: 

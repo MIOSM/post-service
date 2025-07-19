@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: miosm
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE KEYSPACE IF NOT EXISTS post_service WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+  - changeSet:
+      id: 2
+      author: miosm
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE TABLE IF NOT EXISTS post_service.posts (
+                postid uuid PRIMARY KEY,
+                userid uuid,
+                username text,
+                content text,
+                createdat timestamp
+              );
+
+  - changeSet:
+      id: 3
+      author: miosm
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              CREATE TABLE IF NOT EXISTS post_service.posts_by_user (
+                user_id uuid,
+                created_at timestamp,
+                post_id uuid,
+                username text,
+                content text,
+                PRIMARY KEY ((user_id), created_at, post_id)
+              ) WITH CLUSTERING ORDER BY (created_at DESC, post_id DESC); 

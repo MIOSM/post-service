@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: post-service
+  cassandra:
+    schema-action: CREATE_IF_NOT_EXISTS
+    local-datacenter: datacenter1
+    keyspace-name: post_service
+    contact-points: localhost:9042
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true 
