@@ -1,22 +1,52 @@
 package MIOSM.post_service.entity;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.Table;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
-import java.time.Instant;
 
+@Entity
+@Table(name = "posts")
 @Getter
 @Setter
-@Table("posts")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Post {
-    @PrimaryKey
+    @Id
+    @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false, updatable = false, unique = true)
     private UUID postId;
 
+    @Column(columnDefinition = "BINARY(16)", nullable = false)
     private UUID userId;
+
+    @Column(nullable = false, length = 32)
     private String username;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
-    private Instant createdAt;
-} 
+
+    @ElementCollection
+    @CollectionTable(name = "post_images", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "image_url", length = 500)
+    private List<String> imageUrls;
+
+    @ElementCollection
+    @CollectionTable(name = "post_videos", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "video_url", length = 500)
+    private List<String> videoUrls;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+}

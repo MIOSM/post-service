@@ -1,15 +1,40 @@
 spring:
   application:
     name: post-service
-  cassandra:
-    schema-action: CREATE_IF_NOT_EXISTS
-    local-datacenter: datacenter1
-    keyspace-name: post_service
-    contact-points: localhost:9042
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  cloud:
+    eureka:
+      client:
+        service-url:
+          defaultZone: http://eureka-server:8761/eureka
+        register-with-eureka: true
+        fetch-registry: true
+      instance:
+        prefer-ip-address: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3308/post_service
+    username: user
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect 
+
+minio:
+  endpoint: http://localhost:9002
+  root-user: minioadmin
+  root-password: minioadmin
+  bucket: post-media
+
+server:
+  port: 8085

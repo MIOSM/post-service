@@ -14,4 +14,11 @@ public interface PostService {
     Optional<PostResponseDto> updatePost(UUID postId, PostUpdateRequestDto dto);
     boolean deletePost(UUID postId);
     List<PostResponseDto> getPostsByUser(UUID userId);
+    
+    /**
+     * Get all posts by username
+     * @param username 
+     * @return 
+     */
+    List<PostResponseDto> getPostsByUsername(String username);
 } 

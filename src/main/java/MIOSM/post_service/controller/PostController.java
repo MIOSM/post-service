@@ -1,27 +1,80 @@
 package MIOSM.post_service.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import MIOSM.post_service.dto.PostCreateRequestDto;
 import MIOSM.post_service.dto.PostResponseDto;
 import MIOSM.post_service.dto.PostUpdateRequestDto;
 import MIOSM.post_service.service.PostService;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.List;
+import MIOSM.post_service.service.MinioService;
+
+import java.util.*;
 
 @RestController
-@RequestMapping("/posts")
+@RequestMapping("/api/posts")
 @RequiredArgsConstructor
+@Slf4j
 public class PostController {
     private final PostService postService;
+    private final MinioService minioService;
 
     @PostMapping
-    public ResponseEntity<PostResponseDto> createPost(@RequestBody PostCreateRequestDto requestDto) {
-        PostResponseDto responseDto = postService.createPost(requestDto);
-        return ResponseEntity.ok(responseDto);
+    public ResponseEntity<PostResponseDto> createPost(
+            @RequestParam("userId") String userId,
+            @RequestParam("username") String username,
+            @RequestParam("content") String content,
+            @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "videos", required = false) MultipartFile[] videos) {
+        
+        try {
+            UUID userUuid;
+            try {
+                userUuid = UUID.fromString(userId);
+            } catch (IllegalArgumentException e) {
+                userUuid = UUID.nameUUIDFromBytes(userId.getBytes());
+            }
+            
+            PostCreateRequestDto requestDto = new PostCreateRequestDto();
+            requestDto.setUserId(userUuid);
+            requestDto.setUsername(username);
+            requestDto.setContent(content);
+            
+            List<String> imageUrls = new ArrayList<>();
+            List<String> videoUrls = new ArrayList<>();
+
+            if (images != null) {
+                for (MultipartFile image : images) {
+                    if (!image.isEmpty()) {
+                        String imageUrl = minioService.uploadMedia(image, "images");
+                        imageUrls.add(imageUrl);
+                    }
+                }
+            }
+
+            if (videos != null) {
+                for (MultipartFile video : videos) {
+                    if (!video.isEmpty()) {
+                        String videoUrl = minioService.uploadMedia(video, "videos");
+                        videoUrls.add(videoUrl);
+                    }
+                }
+            }
+            
+            requestDto.setImageUrls(imageUrls);
+            requestDto.setVideoUrls(videoUrls);
+            
+            PostResponseDto responseDto = postService.createPost(requestDto);
+            return ResponseEntity.ok(responseDto);
+            
+        } catch (Exception e) {
+            log.error("Error creating post: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -34,6 +87,11 @@ public class PostController {
     @GetMapping("/user/{userId}")
     public List<PostResponseDto> getPostsByUser(@PathVariable UUID userId) {
         return postService.getPostsByUser(userId);
+    }
+    
+    @GetMapping("/user/username/{username}")
+    public List<PostResponseDto> getPostsByUsername(@PathVariable String username) {
+        return postService.getPostsByUsername(username);
     }
 
     @PutMapping("/{id}")
@@ -52,4 +110,4 @@ public class PostController {
             return ResponseEntity.notFound().build();
         }
     }
-} 
+}
