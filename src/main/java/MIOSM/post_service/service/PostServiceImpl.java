@@ -25,6 +25,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostByUserRepository postByUserRepository;
     private final PostMapper postMapper;
+    private final MinioService minioService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -89,11 +90,41 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deletePost(UUID postId) {
         return postRepository.findById(postId).map(post -> {
-            postRepository.deleteById(postId);
-            postByUserRepository.deleteByPostId(postId);
-            return true;
+            try {
+                if (post.getImageUrls() != null) {
+                    for (String imageUrl : post.getImageUrls()) {
+                        try {
+                            minioService.deleteMedia(imageUrl);
+                            log.info("Deleted image from MinIO: {}", imageUrl);
+                        } catch (Exception e) {
+                            log.error("Failed to delete image from MinIO: {}", imageUrl, e);
+                        }
+                    }
+                }
+                
+                if (post.getVideoUrls() != null) {
+                    for (String videoUrl : post.getVideoUrls()) {
+                        try {
+                            minioService.deleteMedia(videoUrl);
+                            log.info("Deleted video from MinIO: {}", videoUrl);
+                        } catch (Exception e) {
+                            log.error("Failed to delete video from MinIO: {}", videoUrl, e);
+                        }
+                    }
+                }
+
+                postByUserRepository.deleteByPostId(postId);
+                postRepository.delete(post);
+                
+                log.info("Successfully deleted post with ID: {}", postId);
+                return true;
+            } catch (Exception e) {
+                log.error("Error deleting post {}: {}", postId, e.getMessage(), e);
+                throw new RuntimeException("Failed to delete post: " + e.getMessage(), e);
+            }
         }).orElse(false);
     }
 
