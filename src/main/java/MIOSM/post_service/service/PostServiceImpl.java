@@ -32,7 +32,6 @@ public class PostServiceImpl implements PostService {
     public PostResponseDto createPost(PostCreateRequestDto requestDto) {
         try {
             UUID postId = UUID.randomUUID();
-            LocalDateTime now = LocalDateTime.now();
 
             Post post = new Post();
             post.setPostId(postId);
@@ -41,8 +40,6 @@ public class PostServiceImpl implements PostService {
             post.setContent(requestDto.getContent());
             post.setImageUrls(requestDto.getImageUrls());
             post.setVideoUrls(requestDto.getVideoUrls());
-            post.setCreatedAt(now);
-            post.setUpdatedAt(now);
             
             log.debug("Saving new post with ID: {}", postId);
             Post savedPost = postRepository.saveAndFlush(post);
@@ -52,7 +49,7 @@ public class PostServiceImpl implements PostService {
             postByUser.setPostId(postId);
             postByUser.setUsername(requestDto.getUsername());
             postByUser.setContent(requestDto.getContent());
-            postByUser.setCreatedAt(now);
+            postByUser.setCreatedAt(savedPost.getCreatedAt());
             
             log.debug("Saving post by user entry for post ID: {}", postId);
             postByUserRepository.saveAndFlush(postByUser);
@@ -73,19 +70,18 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public Optional<PostResponseDto> updatePost(UUID postId, PostUpdateRequestDto dto) {
         return postRepository.findById(postId).map(post -> {
             post.setContent(dto.getContent());
-            postRepository.save(post);
-            List<PostByUser> postsByUser = postByUserRepository.findByUserIdOrderByCreatedAtDesc(post.getUserId());
-            postsByUser.stream()
-                .filter(pbu -> pbu.getPostId().equals(postId))
-                .findFirst()
-                .ifPresent(pbu -> {
-                    pbu.setContent(dto.getContent());
-                    postByUserRepository.save(pbu);
-                });
-            return postMapper.postToPostResponseDto(post);
+            Post updatedPost = postRepository.save(post);
+
+            postByUserRepository.findByPostId(postId).ifPresent(postByUser -> {
+                postByUser.setContent(dto.getContent());
+                postByUserRepository.save(postByUser);
+            });
+            
+            return postMapper.postToPostResponseDto(updatedPost);
         });
     }
 
