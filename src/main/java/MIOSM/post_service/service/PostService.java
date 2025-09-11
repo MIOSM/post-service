@@ -21,4 +21,11 @@ public interface PostService {
      * @return 
      */
     List<PostResponseDto> getPostsByUsername(String username);
+    
+    /**
+     * Get latest posts from all users for dashboard feed
+     * @param limit 
+     * @return 
+     */
+    List<PostResponseDto> getLatestPosts(int limit);
 } 

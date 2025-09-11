@@ -28,6 +28,9 @@ public class Post {
 
     @Column(nullable = false, length = 32)
     private String username;
+    
+    @Column(name = "user_avatar", length = 500)
+    private String userAvatar;
 
     @Column(columnDefinition = "TEXT")
     private String content;

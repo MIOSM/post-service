@@ -27,6 +27,7 @@ public class PostController {
     public ResponseEntity<PostResponseDto> createPost(
             @RequestParam("userId") String userId,
             @RequestParam("username") String username,
+            @RequestParam(value = "userAvatar", required = false) String userAvatar,
             @RequestParam("content") String content,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
             @RequestParam(value = "videos", required = false) MultipartFile[] videos) {
@@ -42,6 +43,7 @@ public class PostController {
             PostCreateRequestDto requestDto = new PostCreateRequestDto();
             requestDto.setUserId(userUuid);
             requestDto.setUsername(username);
+            requestDto.setUserAvatar(userAvatar);
             requestDto.setContent(content);
             
             List<String> imageUrls = new ArrayList<>();
@@ -109,5 +111,10 @@ public class PostController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+    
+    @GetMapping("/latest")
+    public List<PostResponseDto> getLatestPosts(@RequestParam(defaultValue = "10") int limit) {
+        return postService.getLatestPosts(limit);
     }
 }

@@ -11,6 +11,7 @@ import java.util.UUID;
 public class PostCreateRequestDto {
     private UUID userId;
     private String username;
+    private String userAvatar;
     private String content;
     private List<String> imageUrls;
     private List<String> videoUrls;

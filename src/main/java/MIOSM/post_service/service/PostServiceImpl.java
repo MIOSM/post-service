@@ -139,4 +139,13 @@ public class PostServiceImpl implements PostService {
             .map(postMapper::postToPostResponseDto)
             .toList();
     }
+    
+    @Override
+    public List<PostResponseDto> getLatestPosts(int limit) {
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc();
+        return posts.stream()
+            .limit(limit)
+            .map(postMapper::postToPostResponseDto)
+            .toList();
+    }
 }
