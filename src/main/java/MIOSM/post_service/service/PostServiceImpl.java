@@ -37,6 +37,7 @@ public class PostServiceImpl implements PostService {
             post.setPostId(postId);
             post.setUserId(requestDto.getUserId());
             post.setUsername(requestDto.getUsername());
+            post.setUserAvatar(requestDto.getUserAvatar());
             post.setContent(requestDto.getContent());
             post.setImageUrls(requestDto.getImageUrls());
             post.setVideoUrls(requestDto.getVideoUrls());
