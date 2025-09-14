@@ -51,6 +51,9 @@ public class Post {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount = 0L;
+    
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

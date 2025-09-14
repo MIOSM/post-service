@@ -15,8 +15,10 @@ import MIOSM.post_service.dto.PostUpdateRequestDto;
 import MIOSM.post_service.mapper.PostMapper;
 import MIOSM.post_service.entity.Post;
 import MIOSM.post_service.entity.PostByUser;
+import MIOSM.post_service.entity.Like;
 import MIOSM.post_service.repository.PostRepository;
 import MIOSM.post_service.repository.PostByUserRepository;
+import MIOSM.post_service.repository.LikeRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ import MIOSM.post_service.repository.PostByUserRepository;
 public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostByUserRepository postByUserRepository;
+    private final LikeRepository likeRepository;
     private final PostMapper postMapper;
     private final MinioService minioService;
 
@@ -142,11 +145,133 @@ public class PostServiceImpl implements PostService {
     }
     
     @Override
+    public List<PostResponseDto> getPostsByUsername(String username, UUID currentUserId) {
+        List<Post> posts = postRepository.findByUsernameOrderByCreatedAtDesc(username);
+        return posts.stream()
+            .map(post -> {
+                PostResponseDto dto = postMapper.postToPostResponseDto(post);
+                if (currentUserId != null) {
+                    dto.setIsLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
+                }
+                return dto;
+            })
+            .toList();
+    }
+    
+    @Override
     public List<PostResponseDto> getLatestPosts(int limit) {
         List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc();
         return posts.stream()
             .limit(limit)
             .map(postMapper::postToPostResponseDto)
             .toList();
+    }
+    
+    @Override
+    public List<PostResponseDto> getLatestPosts(int limit, UUID currentUserId) {
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc();
+        return posts.stream()
+            .limit(limit)
+            .map(post -> {
+                PostResponseDto dto = postMapper.postToPostResponseDto(post);
+                if (currentUserId != null) {
+                    dto.setIsLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
+                }
+                return dto;
+            })
+            .toList();
+    }
+    
+    @Override
+    @Transactional
+    public boolean likePost(UUID postId, UUID userId, String username) {
+
+        if (likeRepository.existsByPostIdAndUserId(postId, userId)) {
+            return false;
+        }
+
+        Like like = new Like();
+        like.setPostId(postId);
+        like.setUserId(userId);
+        like.setUsername(username);
+        likeRepository.save(like);
+
+        postRepository.findById(postId).ifPresent(post -> {
+            post.setLikeCount(post.getLikeCount() + 1);
+            postRepository.save(post);
+        });
+        
+        log.info("User {} liked post {}", username, postId);
+        return true;
+    }
+    
+    @Override
+    @Transactional
+    public boolean unlikePost(UUID postId, UUID userId) {
+
+        if (!likeRepository.existsByPostIdAndUserId(postId, userId)) {
+            return false;
+        }
+
+        likeRepository.deleteByPostIdAndUserId(postId, userId);
+
+        postRepository.findById(postId).ifPresent(post -> {
+            post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+            postRepository.save(post);
+        });
+        
+        log.info("User {} unliked post {}", userId, postId);
+        return true;
+    }
+    
+    @Override
+    public boolean isPostLikedByUser(UUID postId, UUID userId) {
+        return likeRepository.existsByPostIdAndUserId(postId, userId);
+    }
+    
+    @Override
+    public List<PostResponseDto> getLikedPostsByUser(UUID userId) {
+        List<UUID> likedPostIds = likeRepository.findPostIdsByUserIdOrderByCreatedAtDesc(userId);
+        List<Post> posts = postRepository.findAllById(likedPostIds);
+
+        return likedPostIds.stream()
+            .map(postId -> posts.stream()
+                .filter(post -> post.getPostId().equals(postId))
+                .findFirst()
+                .map(postMapper::postToPostResponseDto)
+                .orElse(null))
+            .filter(dto -> dto != null)
+            .toList();
+    }
+    
+    @Override
+    public long getTotalLikesForUserPosts(UUID userId) {
+        List<Post> userPosts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return userPosts.stream()
+            .mapToLong(Post::getLikeCount)
+            .sum();
+    }
+    
+    @Override
+    public List<PostResponseDto> getLikedPostsByUsername(String username) {
+        List<UUID> likedPostIds = likeRepository.findPostIdsByUsernameOrderByCreatedAtDesc(username);
+        List<Post> posts = postRepository.findAllById(likedPostIds);
+
+        return likedPostIds.stream()
+            .map(postId -> posts.stream()
+                .filter(post -> post.getPostId().equals(postId))
+                .findFirst()
+                .map(postMapper::postToPostResponseDto)
+                .orElse(null))
+            .filter(dto -> dto != null)
+            .toList();
+    }
+    
+    @Override
+    public long getTotalLikesForUserPostsByUsername(String username) {
+        List<Post> userPosts = postRepository.findByUsernameOrderByCreatedAtDesc(username);
+        return userPosts.stream()
+            .mapToLong(Post::getLikeCount)
+            .sum();
     }
 }

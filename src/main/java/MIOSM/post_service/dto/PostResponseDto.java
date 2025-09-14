@@ -22,6 +22,8 @@ public class PostResponseDto {
     private String content;
     private List<String> imageUrls;
     private List<String> videoUrls;
+    private Long likeCount;
+    private Boolean isLikedByCurrentUser;
     
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
