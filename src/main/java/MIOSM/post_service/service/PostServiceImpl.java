@@ -253,7 +253,7 @@ public class PostServiceImpl implements PostService {
     }
     
     @Override
-    public List<PostResponseDto> getLikedPostsByUsername(String username) {
+    public List<PostResponseDto> getLikedPostsByUsername(String username, UUID currentUserId) {
         List<UUID> likedPostIds = likeRepository.findPostIdsByUsernameOrderByCreatedAtDesc(username);
         List<Post> posts = postRepository.findAllById(likedPostIds);
 
@@ -261,7 +261,13 @@ public class PostServiceImpl implements PostService {
             .map(postId -> posts.stream()
                 .filter(post -> post.getPostId().equals(postId))
                 .findFirst()
-                .map(postMapper::postToPostResponseDto)
+                .map(post -> {
+                    PostResponseDto dto = postMapper.postToPostResponseDto(post);
+                    if (currentUserId != null) {
+                        dto.setIsLikedByCurrentUser(likeRepository.existsByPostIdAndUserId(post.getPostId(), currentUserId));
+                    }
+                    return dto;
+                })
                 .orElse(null))
             .filter(dto -> dto != null)
             .toList();

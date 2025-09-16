@@ -85,11 +85,12 @@ public interface PostService {
     long getTotalLikesForUserPosts(UUID userId);
     
     /**
-     * Get liked posts by username
+     * Get liked posts by username with current user context for like status
      * @param username
+     * @param currentUserId
      * @return 
      */
-    List<PostResponseDto> getLikedPostsByUsername(String username);
+    List<PostResponseDto> getLikedPostsByUsername(String username, UUID currentUserId);
     
     /**
      * Get total likes count for all posts by username

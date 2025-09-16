@@ -243,8 +243,18 @@ public class PostController {
     }
     
     @GetMapping("/liked/user/username/{username}")
-    public List<PostResponseDto> getLikedPostsByUsername(@PathVariable String username) {
-        return postService.getLikedPostsByUsername(username);
+    public List<PostResponseDto> getLikedPostsByUsername(
+            @PathVariable String username,
+            @RequestParam(required = false) String currentUserId) {
+        UUID currentUserUUID = null;
+        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
+            try {
+                currentUserUUID = UUID.fromString(currentUserId);
+            } catch (IllegalArgumentException e) {
+                currentUserUUID = UUID.nameUUIDFromBytes(currentUserId.getBytes());
+            }
+        }
+        return postService.getLikedPostsByUsername(username, currentUserUUID);
     }
     
     @GetMapping("/user/{userId}/total-likes")
