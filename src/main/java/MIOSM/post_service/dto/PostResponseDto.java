@@ -8,6 +8,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,14 +34,14 @@ public class PostResponseDto {
 
     public String getCreatedAt() {
         if (createdAt == null) return null;
-        return ZonedDateTime.of(createdAt, ZoneId.systemDefault())
+        return ZonedDateTime.of(createdAt, ZoneOffset.UTC)
                           .withZoneSameInstant(ZoneId.of("UTC"))
                           .format(java.time.format.DateTimeFormatter.ISO_INSTANT);
     }
     
     public String getUpdatedAt() {
         if (updatedAt == null) return null;
-        return ZonedDateTime.of(updatedAt, ZoneId.systemDefault())
+        return ZonedDateTime.of(updatedAt, ZoneOffset.UTC)
                           .withZoneSameInstant(ZoneId.of("UTC"))
                           .format(java.time.format.DateTimeFormatter.ISO_INSTANT);
     }
